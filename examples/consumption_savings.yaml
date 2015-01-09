@@ -1,0 +1,71 @@
+
+
+```
+# YAML files : serialization
+
+name: Consumption-Savings problem
+
+symbols:
+    markov_states: [y, u]
+    states: [m]
+    controls: [c]
+    expectations: [z]
+
+equations:
+
+    transition:
+        - m = (m(-1)-c(-1))*r + y*u
+    arbitrage:
+        - 1 = beta*(c(1))^(-gamma)/c^(-gamma)  |  0 <= c <= m
+
+
+    expectation:
+        - z = beta*(c(1))^(-gamma)             |  0 <= c <= m
+    direct_response:
+        - c = (z)^(-1/gamma)
+
+calibration:
+    # parameter values
+    beta:  0.95
+    gamma: 4.04
+    r:     0.94
+    u:     0.1
+    T:     100
+    # steady-state values
+    m:     0.0
+    c:     1.0
+    y:     1.0
+    u:     0.0
+    v:     0.1
+    z:     beta*(c^(-gamma))
+
+#########
+
+
+# a mini-language to define markov chain: define, discretize, combine
+markov_chain:
+    tensor_markov:
+        - AR1:
+            sigma:  0.001
+            rho:    0.999
+            n:      5
+            method: rouwenhorst
+        - chain:             # specify P and Q by and
+            P: [                  # P:  each row is a state
+                [1.0],
+                [1-v]
+               ]
+            Q: [                  # transition probabilities
+                [0.95,0.05],
+                [0.5 ,0.5]
+               ]
+
+options:
+    approximation_space:
+        a: [0]
+        b: [10]
+        orders: [100]
+    horizon: T
+    death_probability: 0.0001
+
+```

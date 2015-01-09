@@ -1,0 +1,89 @@
+# H-DRIMS Krussell-Smith mockup
+
+name: individual_savings
+
+symbols:
+    markov_states: [e]
+    states: [a, k]
+    controls: [da, i, n]
+    auxiliaries: [c]
+    values: [v]
+    aggregate: [r, w, k, a]
+    parameters: [beta, gamma, theta, eta, discount, r, u, p, T]
+
+equations:
+
+    transition: [
+            a = da(-1),
+            k = k(-1) *(1-delta) + i(-1)
+        ]
+    auxiliary:
+        - c = (1+r-delta)*k + e*w*n + a*q - da - i
+
+    value:
+        - v = c^(1-gamma)/(1-gamma) + chi*n^(1-eta)/(1-eta) + beta*v(1)
+
+    controls_lb:
+        - 0     # da
+        - 0     # i
+        - 0     # n
+
+    controls_ub:
+        - inf
+        - inf
+        - inf
+
+calibration:
+    # parameter values
+    # steady-state values
+
+
+# a mini-language to define markov chain: define, discretize, combine
+markov_chain:
+    chain:             # specify P and Q by and
+        P: [                  # P:  each row is a state
+            [1.0],
+            [0.9]
+           ]
+        Q: [                  # transition probabilities
+            [0.95,0.05],
+            [0.5 ,0.5]
+           ]
+
+options:
+    approximation_space:
+        a: [0, 0]
+        b: [10, 10]
+        orders: [100, 100]
+    horizon: T
+
+
+---
+
+# The Heterogeneous Agents model
+name: Krussell-Smith
+model_type: Ayiagari
+
+symbols:
+    variables: [K,n,r,w]
+
+population:
+    agent:
+        index:
+            i: 100
+        problem: savings
+
+    # agents are all ex ante identical
+    # distribution:
+    #     u:      i -> i/n*0.1
+    #     beta:   j -> 0.945 + j/n*(0.955-0.945)
+
+equilibrium:
+    - K = sum(i, k[i])
+    - n = sum(i, n[i])
+    - r = theta*(K/n)^(theta-1)
+    - w = (1-theta)*(n/K)^(theta-1)
+    - 0 = sum(i, a[i])
+
+aggregate_states:
+    - moments([k[i],n[i]],2)

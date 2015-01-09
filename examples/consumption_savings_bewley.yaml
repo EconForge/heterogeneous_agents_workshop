@@ -1,0 +1,83 @@
+# H-DRIMS mockup
+
+name: individual_savings
+
+symbols:
+    markov_states: [y, u]
+    states: [m]
+    controls: [c]
+    expectation:
+    parameters: [beta, gamma, r, u, p, T]
+
+equations:
+
+    transition:
+        - m = (m(-1)-c(-1))*r + y*u
+    arbitrage:
+        - 1 = beta*(c(1))^(-gamma)/c^(-gamma)*r  |  0 <= c <= m + p
+    expectation:
+        - z = beta*(c(1))^(-gamma)             |  0 <= c <= m + p
+    direct_response:
+        - c = (z)^(-1/gamma)
+
+calibration:
+    # parameter values
+    beta:  0.95
+    gamma: 4.00
+    r:     0.94
+    u:     0.1
+    p:     0.1
+    T:     100
+    # steady-state values
+    m:     0.0
+    c:     1.0
+    y:     1.0
+    u:     0.0
+    z:     beta*(c^(-gamma))
+
+# a mini-language to define markov chain: define, discretize, combine
+markov_chain:
+    tensor_markov:
+        - AR1:
+            sigma:  0.001
+            rho:    0.999
+            n:      5
+            method: rouwenhorst
+        - chain:             # specify P and Q by and
+            P: [                  # P:  each row is a state
+                [1.0],
+                [1-u]
+               ]
+            Q: [                  # transition probabilities
+                [0.95,0.05],
+                [0.5 ,0.5]
+               ]
+
+options:
+    approximation_space:
+        a: [0]
+        b: [10]
+        orders: [100]
+    horizon: T
+
+---
+
+# The Heterogeneous Agents model
+name: Savings
+model_type: Lucas
+
+    free_parameter: [r]
+
+    population:
+        agent:
+            index:
+                i: 100
+                j: 100
+            problem: savings
+
+    distribution:
+        u:      i -> i/n*0.1
+        beta:   j -> 0.945 + j/n*(0.955-0.945)
+
+    equilibrium:
+        - sum([i,j], m[i,j]-c[i,j]) = 0 # total savings is 0
